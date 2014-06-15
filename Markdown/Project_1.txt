@@ -1,0 +1,159 @@
+Peer Assessment 1 - Reproducible Research
+============
+
+### Loading and preprocessing the data
+
+
+```r
+setwd("/home/isgauper/Downloads/Coursera/Reproducible Research/Project1")
+
+activity <- read.csv("activity.csv", colClasses = c("integer","Date","integer"))
+```
+
+### What is the mean total number of steps taken per day?
+
+
+```r
+#calculate total steps for each day
+daysum <- rowsum(activity$steps, format(activity$date, '%m-%d'),na.rm=T)
+
+#plot histogram
+plot(daysum,type="h",lwd=10,lend="square", 
+	main = "Total Number of Steps Taken Each Day",
+	ylab="Total Steps", 
+	xlab = "Day")   				
+```
+
+![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2.png) 
+
+```r
+daymean <- mean(daysum) #mean of all days
+daymedian <- median(daysum) #median of all days
+```
+
+The mean number of steps taken per day was 9354.2295.
+The median number of steps taken per day was 10395.
+
+### What is the average daily activity pattern?
+
+
+```r
+intmean <- rowsum(activity$steps, activity$interval,na.rm=T)/61 #mean per interval
+plot.ts(intmean, main = "Average daily activity pattern", 
+	xlab = "Interval",
+	ylab = "Steps") #plot time series
+```
+
+![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-3.png) 
+
+```r
+maxint <- which(intmean==max(intmean)) #find the interval with the highest maximum
+
+#create a data frame for using later
+intmean2 <-as.data.frame(cbind(interval = as.numeric(rownames(intmean)), 
+	average = as.numeric(intmean[,1])))
+```
+On average, interval 104 contains the maximum number of steps.
+
+
+# Imputing missing values
+
+
+```r
+na.sum <- sum(is.na(activity$steps)) #calculate the total number of NAs
+
+#replace nas with interval mean
+
+merge = merge(activity, intmean2, by = "interval") #merge activity data with interval means
+
+merge$steps = ifelse(is.na(merge$steps), floor(merge$average), merge$steps) #replace NAs
+
+#create data set that is equivalent to original data set with NAs removed
+
+activity.na = data.frame(steps = merge$steps, date=merge$date, interval = merge$interval)
+activity.na = activity.na[with(activity.na, order(date,interval)),]
+
+head(activity.na)
+```
+
+```
+##     steps       date interval
+## 1       1 2012-10-01        0
+## 63      0 2012-10-01        5
+## 128     0 2012-10-01       10
+## 205     0 2012-10-01       15
+## 264     0 2012-10-01       20
+## 327     1 2012-10-01       25
+```
+
+```r
+#calculate total steps for each day
+daysum.na <- rowsum(activity.na$steps, format(activity.na$date, '%m-%d'),na.rm=T)
+
+#plot histogram
+plot(daysum.na,type="h",lwd=10,lend="square", 
+	main = "Total Number of Steps Taken Each Day",
+	ylab="Total Steps", 
+	xlab = "Day")   				
+```
+
+![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4.png) 
+
+```r
+daymean.na <- mean(daysum.na) #mean of all days
+daymedian.na <- median(daysum.na) #median of all days
+```
+
+The total number of NAs is 2304.
+
+The mean number of steps taken per day was 1.0564 &times; 10<sup>4</sup>.
+The median number of steps taken per day was 1.0395 &times; 10<sup>4</sup>.
+
+These values are larger than the mean and median values computed before imputing the NAs. 
+Imputing the NAs increases the average number of steps per day.
+
+
+### Are there differences in activity patterns between weekdays and weekends?
+
+
+```r
+#labeling days as weekend or weekday
+
+
+activity$daytype <- ifelse(weekdays(activity$date) %in% c("Saturday","Sunday"), "Weekend", "Weekday")
+
+weekend <- subset(activity, daytype == "Weekend")
+weekday <- subset(activity, daytype == "Weekday")
+
+weekend.intmean <- rowsum(weekend$steps, weekend$interval,na.rm=T)/61 #mean per interval
+weekday.intmean <- rowsum(weekday$steps, weekday$interval, na.rm=T)/61 
+
+par(mfrow = c(2,1))
+plot.ts(weekend.intmean, main = "Average Daily Activity - Weekend", ylab = "Steps")
+plot.ts(weekday.intmean, main = "Average Daily Activity - Weekday", ylab = "Steps")
+```
+
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5.png) 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
